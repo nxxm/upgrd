@@ -185,17 +185,22 @@ namespace upgrd {
                       dl_dest
                     ); 
                     
-                    // TODO: launch a shell, detach it, stop us, make him copy on top of us.
                     auto system_shell = bp::shell();
-                    
 
                     _log << "We will close, the next time you will come back you will be in the newer vesion" << std::endl;
+  
+                    #if BOOST_OS_WINDOWS
+                    auto str_cmd = "timeout /t 3 /nobreak & del /F /Q "s + _app_path.generic_string() + " & "
+                      + "rename " + upgraded_app.generic_string() + " " + _app_path.generic_string();
 
-                    #if BOOST_OS_LINUX
+                    bp::spawn(system_shell, "/c", str_cmd.data());
+
+                    #else 
                     auto str_cmd = "sleep 3; rm "s + _app_path.generic_string() + ";"
                       + "mv " + upgraded_app.generic_string() + " " + _app_path.generic_string() + ";";
 
                     bp::spawn(system_shell, "-c", str_cmd.data());
+
                     #endif
 
                     std::exit(0); // we will never come back
