@@ -151,8 +151,8 @@ namespace upgrd {
 
                 char upgrade = 'o';
                 _log << "Do you want to perform the upgrade ?." << std::endl;
-                while ( (std::tolower(upgrade) != 'y') || (std::tolower(upgrade) != 'n') ) {
-                  _log << "[y]es or [n]o ? Either type y or n : " << std::endl;
+                while ( (std::tolower(upgrade) != 'y') && (std::tolower(upgrade) != 'n') ) {
+                  _log << "[y]es or [n]o ? Either type y or n + Return : " << std::endl;
                   std::cin.get(upgrade);
                 }
 
