@@ -1,6 +1,7 @@
 {
      "nxxm/gh" : { "@" : "feature/nxxm-migration" }
    , "cpp-pre/json" : { "@" : "feature/nxxm-migration"  }
+   , "cpp-pre/file" : {}
    , "nxxm/cli_widgets" : { "@" : "master" }
    , "kuba--/zip" : { "@" : "v0.1.9"  }
    , "daminetreg/xxhr" : { "@" : "feature/nxxm-migration" }

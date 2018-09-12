@@ -3,12 +3,15 @@
 #include <xxhr/xxhr.hpp>
 #include <gh/releases.hxx>
 #include <regex>
+#include <chrono>
 #include <boost/predef.h>
 #include <boost/algorithm/string.hpp>
 #include <boost/algorithm/string/find.hpp>
 #include <boost/filesystem.hpp>
 #include <boost/fusion/include/adapt_struct.hpp>
 #include <boost/fusion/include/comparison.hpp>
+#include <pre/file/string.hpp>
+
 #include <shipxx/shipxx.hxx>
 
 #include <boost/process.hpp>
@@ -82,9 +85,14 @@ namespace upgrd {
       return fs::temp_directory_path() / github_owner_ / github_repo_;
     }
 
+    //! \path in temp_dir informing of previous remote version check so that we don't ask server everytime
+    fs::path previous_check_file() {
+      return fs::temp_directory_path() / (github_owner_ + "."s + github_repo_ + ".checked");
+    }
+
     //! \return the current version installed
     std::string current_version() {
-      return std::string(_current); 
+      return std::string(current); 
     }
 
     /**
@@ -93,99 +101,122 @@ namespace upgrd {
      */
     void propose_upgrade_when_needed() {
 
+      using namespace std::literals::chrono_literals;
       using namespace boost::algorithm;
       try {
         //TODO: write last time tried and check every day once
 
-        // TODO: Check current version with short timeout
-        gh::get_latest_release(github_owner_, github_repo_, [&](gh::releases::release_t&& latest) {
-          
-          version_t remote{latest.tag_name};
-          _log << "current ver : " << std::string(current) << std::endl;
-          _log << "remote ver : " << std::string(remote) << std::endl;
-          _log << "remote ver older or bigger : " << (remote > current) << " .. " << (remote < current) << std::endl;
-          
-          if (remote > current) {
+        std::error_condition dont_throw;
+        auto previous_check_str = pre::file::to_string(previous_check_file().generic_string(), dont_throw);
+        auto previous_check = 0s;
+        if (!previous_check_str.empty()) { previous_check = std::chrono::seconds(std::stol(previous_check_str)); }
+        auto yesterday  = (std::chrono::system_clock::now() - 24h).time_since_epoch();
 
-            auto compatible_asset = std::find_if(latest.assets.begin(), latest.assets.end(), [](auto& asset) {
-              std::string asset_lowered_name = to_lower_copy(asset.name);
-              #if BOOST_OS_LINUX
-                return asset_lowered_name.find("linux") != std::string::npos;
-              #elif BOOST_OS_MACOS
-                return asset_lowered_name.find("macos") != std::string::npos;
+        if (previous_check < yesterday) {
 
-              #elif BOOST_OS_WINDOWS
-                return asset_lowered_name.find("windows") != std::string::npos;
-DC0F9620A1CC28C095375453F5BA5546EE76703B
-              #endif
-            });
+          gh::get_latest_release(github_owner_, github_repo_, [&](gh::releases::release_t&& latest) {
+            
+            version_t remote{latest.tag_name};
+            
+            // Write marker
+            pre::file::from_string(previous_check_file().generic_string(),
+              std::to_string(
+                std::chrono::duration_cast<std::chrono::seconds>(std::chrono::system_clock::now().time_since_epoch())
+                  .count()), dont_throw);
 
-            if (compatible_asset != latest.assets.end()) {
-              _log << "🆕 " << github_owner_ << "/" << github_repo_ << " version available.\n"
-                << "current version : " << std::string(current) << "\n"
-                << "new version : " << std::string(remote) << "\n\n"
-                
-                << latest.name << "\n"
-                << std::string(latest.name.size(), '^') << "\n"
-                << latest.body 
-                << std::endl;
+            if (remote > current) {
 
-              char upgrade = 'n';
-              _log << "Do you want to perform the upgrade ? [y]es or [n]o." << std::endl;
-              std::cin >> upgrade;
+              auto compatible_asset = std::find_if(latest.assets.begin(), latest.assets.end(), [](auto& asset) {
+                std::string asset_lowered_name = to_lower_copy(asset.name);
+                #if BOOST_OS_LINUX
+                  return asset_lowered_name.find("linux") != std::string::npos;
+                #elif BOOST_OS_MACOS
+                  return asset_lowered_name.find("macos") != std::string::npos;
 
-              if (std::tolower(upgrade) == 'y') {
-                
-                auto searched = compatible_asset->name + ":";
-                auto sha1info =
-                  latest.body.substr(latest.body.find(searched) + searched.size() - 1, 42);
+                #elif BOOST_OS_WINDOWS
+                  return asset_lowered_name.find("windows") != std::string::npos;
+  DC0F9620A1CC28C095375453F5BA5546EE76703B
+                #endif
+              });
 
-                std::regex rx_sha1_asset(":(([0-9]|[A-Z]){40})");
-                std::smatch what;
-                std::regex_match(sha1info, what, rx_sha1_asset);
-                auto expected_sha1 = what[1].str();
-                to_lower(expected_sha1);
-                _log << "expected sha1 : " << expected_sha1 << std::endl;
-
-                try {
-                  auto dl_dest = temp_dir() / "downloads";
-                  auto final_dest = temp_dir() / std::string(remote);
-                  auto upgraded_app = final_dest / _app_path.filename();
-
-                  fs::create_directories(dl_dest);
-                  shipxx::ship(
-                    remote, 
-                    compatible_asset->browser_download_url,
-                    expected_sha1, 
-                    final_dest,
-                    "bin",
-                    "Downloading "s + std::string(remote),
-                    dl_dest
-                  ); 
+              if (compatible_asset != latest.assets.end()) {
+                _log << "🆕 " << github_owner_ << "/" << github_repo_ << " version available.\n"
+                  << "current version : " << std::string(current) << "\n"
+                  << "new version : " << std::string(remote) << "\n\n"
                   
-                  // TODO: launch a shell, detach it, stop us, make him copy on top of us.
-                  auto system_shell = bp::shell();
+                  << latest.name << "\n"
+                  << std::string(latest.name.size(), '^') << "\n"
+                  << latest.body 
+                  << std::endl;
+
+                char upgrade = 'o';
+                _log << "Do you want to perform the upgrade ?." << std::endl;
+                while ( (std::tolower(upgrade) != 'y') || (std::tolower(upgrade) != 'n') ) {
+                  _log << "[y]es or [n]o ? Either type y or n : " << std::endl;
+                  std::cin.get(upgrade);
+                }
+
+                if (std::tolower(upgrade) == 'y') {
                   
-                  _log << "We will close, the next time you will come back you will be in the newer vesion" << std::endl;
+                  auto searched = compatible_asset->name + ":";
+                  auto sha1info =
+                    latest.body.substr(latest.body.find(searched) + searched.size() - 1, 42);
 
-                  #if BOOST_OS_LINUX
-                  auto str_cmd = "sleep 3; rm "s + _app_path.generic_string() + ";"
-                    + "mv " + upgraded_app.generic_string() + " " + _app_path.generic_string() + ";";
+                  std::regex rx_sha1_asset(":(([0-9]|[A-Z]){40})");
+                  std::smatch what;
+                  std::regex_match(sha1info, what, rx_sha1_asset);
+                  auto expected_sha1 = what[1].str();
+                  to_lower(expected_sha1);
+                  _log << "expected sha1 : " << expected_sha1 << std::endl;
 
-                  bp::spawn(system_shell, "-c", str_cmd.data());
-                  #endif
+                  try {
+                    auto dl_dest = temp_dir() / "downloads";
+                    auto final_dest = temp_dir() / std::string(remote);
+                    auto upgraded_app = final_dest / _app_path.filename();
 
-                  std::exit(0); // we will never come back
-                  
-                } catch (...) {
-                  // fail (user message from function in try)
-                  // and continue to run into current app
+                    fs::create_directories(dl_dest);
+                    shipxx::ship(
+                      remote, 
+                      compatible_asset->browser_download_url,
+                      expected_sha1, 
+                      final_dest,
+                      "bin",
+                      "Downloading "s + std::string(remote),
+                      dl_dest
+                    ); 
+                    
+                    // TODO: launch a shell, detach it, stop us, make him copy on top of us.
+                    auto system_shell = bp::shell();
+                    
+
+                    _log << "We will close, the next time you will come back you will be in the newer vesion" << std::endl;
+
+                    #if BOOST_OS_LINUX
+                    auto str_cmd = "sleep 3; rm "s + _app_path.generic_string() + ";"
+                      + "mv " + upgraded_app.generic_string() + " " + _app_path.generic_string() + ";";
+
+                    bp::spawn(system_shell, "-c", str_cmd.data());
+                    #endif
+
+                    std::exit(0); // we will never come back
+                    
+                  } catch (...) {
+                    // fail (user message from function in try)
+                    // and continue to run into current app
+                  }
+                } else {
+                  std::cout << "You will be reminded in 24h for the update again. Or pass --force-update if you want it earlier" << std::endl;
                 }
               }
+            } else {
+              _log << "👍 You have the latest version : " 
+               << "local : " << std::string(current) << ", "
+               << "remote : " << std::string(remote) << std::endl;
+            
             }
-          }
 
-        });
+          });
+        }
       } catch (...) {
         // Silently fail, if we cannot get the latest update info.
       }
