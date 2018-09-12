@@ -6,7 +6,6 @@
 #include <chrono>
 #include <boost/predef.h>
 #include <boost/algorithm/string.hpp>
-#include <boost/algorithm/string/find.hpp>
 #include <boost/filesystem.hpp>
 #include <boost/fusion/include/adapt_struct.hpp>
 #include <boost/fusion/include/comparison.hpp>
@@ -74,7 +73,7 @@ namespace upgrd {
       :   github_owner_(github_owner)
         , github_repo_(github_repo)
         , current(semver)
-        , _app_path(app_path)
+        , _app_path(fs::canonical(app_path))
         , _log(log)
     {
       fs::create_directories(temp_dir());
@@ -100,7 +99,7 @@ namespace upgrd {
      *        If that's the case the app get downloaded and replaces this one.
      */
     void propose_upgrade_when_needed() {
-
+      
       using namespace std::literals::chrono_literals;
       using namespace boost::algorithm;
       try {
@@ -127,7 +126,7 @@ namespace upgrd {
             if (remote > current) {
 
               auto compatible_asset = std::find_if(latest.assets.begin(), latest.assets.end(), [](auto& asset) {
-                std::string asset_lowered_name = to_lower_copy(asset.name);
+                std::string asset_lowered_name = boost::algorithm::to_lower_copy(asset.name);
                 #if BOOST_OS_LINUX
                   return asset_lowered_name.find("linux") != std::string::npos;
                 #elif BOOST_OS_MACOS
@@ -135,7 +134,7 @@ namespace upgrd {
 
                 #elif BOOST_OS_WINDOWS
                   return asset_lowered_name.find("windows") != std::string::npos;
-  DC0F9620A1CC28C095375453F5BA5546EE76703B
+                  
                 #endif
               });
 
@@ -190,8 +189,8 @@ namespace upgrd {
                     _log << "We will close, the next time you will come back you will be in the newer vesion" << std::endl;
   
                     #if BOOST_OS_WINDOWS
-                    auto str_cmd = "timeout /t 3 /nobreak & del /F /Q "s + _app_path.generic_string() + " & "
-                      + "rename " + upgraded_app.generic_string() + " " + _app_path.generic_string();
+                    auto str_cmd = "timeout /t 3 /nobreak & del /F /Q "s + _app_path.make_preferred().string() + " & "
+                      + "move /Y " + upgraded_app.make_preferred().string() + " " + _app_path.make_preferred().string();
 
                     bp::spawn(system_shell, "/c", str_cmd.data());
 
