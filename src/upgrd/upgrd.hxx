@@ -186,7 +186,7 @@ namespace upgrd {
                     
                     auto system_shell = bp::shell();
 
-                    _log << "We will close, the next time you will come back you will be in the newer vesion" << std::endl;
+                    _log << "We will close, the next time you will come back you will be in the newer version" << std::endl;
   
                     #if BOOST_OS_WINDOWS
                     auto str_cmd = "timeout /t 3 /nobreak & del /F /Q "s + _app_path.make_preferred().string() + " & "
