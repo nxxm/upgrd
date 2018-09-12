@@ -146,7 +146,7 @@ namespace shipxx {
 
     try { 
 
-      if (!is_already_done(final_dest, expected_sha1)) {
+      //if (!is_already_done(final_dest, expected_sha1)) {
 
         if (message) {
           std::cout << message.value_or("") + "." << std::endl;
@@ -165,10 +165,10 @@ namespace shipxx {
         
         fs::remove_all(download_dir / cache_name);
 
-        write_already_done(final_dest, expected_sha1);
+        //write_already_done(final_dest, expected_sha1);
 
         loader.stop(message.value_or("") + " done.");
-      } 
+      //} 
 
     } catch (...) {
       loader.stop("● [err] "s + message.value_or("") + ".", true);
