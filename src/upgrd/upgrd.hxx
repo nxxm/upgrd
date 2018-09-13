@@ -165,16 +165,16 @@ namespace upgrd {
 
                 if (std::tolower(upgrade) == 'y') {
                   
-                  auto searched = compatible_asset->name + ":";
-                  auto sha1info =
-                    latest.body.substr(latest.body.find(searched) + searched.size() - 1, 42);
-
-                  std::regex rx_sha1_asset(":(([0-9]|[A-Z]){40})");
+                  auto searched = compatible_asset->name + ":(([0-9]|[A-Z]){40})";
+                  std::regex rx_sha1_asset(searched);
                   std::smatch what;
-                  std::regex_match(sha1info, what, rx_sha1_asset);
-                  auto expected_sha1 = what[1].str();
-                  to_lower(expected_sha1);
-                  _log << "expected sha1 : " << expected_sha1 << std::endl;
+                  
+                  std::string expected_sha1;
+                  if (std::regex_search(latest.body, what, rx_sha1_asset)) {
+                    expected_sha1 = what[1].str();
+                    to_lower(expected_sha1);
+                    _log << "expected sha1 : " << expected_sha1 << std::endl;
+                  }
 
                   try {
                     auto dl_dest = temp_dir() / "downloads";
@@ -189,7 +189,8 @@ namespace upgrd {
                       final_dest,
                       "bin",
                       "Downloading "s + std::string(remote),
-                      dl_dest
+                      dl_dest,
+                      !expected_sha1.empty()
                     ); 
                     
                     auto system_shell = bp::shell();
