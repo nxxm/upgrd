@@ -9,6 +9,7 @@
 #include <boost/filesystem.hpp>
 #include <boost/fusion/include/adapt_struct.hpp>
 #include <boost/fusion/include/comparison.hpp>
+#include <boost/dll/runtime_symbol_info.hpp>
 #include <pre/file/string.hpp>
 
 #include <shipxx/shipxx.hxx>
@@ -73,10 +74,17 @@ namespace upgrd {
       :   github_owner_(github_owner)
         , github_repo_(github_repo)
         , current(semver)
-        , _app_path(fs::canonical(app_path))
+        , _app_path(app_path)
         , _log(log)
     {
       fs::create_directories(temp_dir());
+      
+      boost::system::error_code ec{};
+      auto found_full_program = boost::dll::program_location(ec);
+
+      if (!ec) {
+        _app_path = found_full_program;
+      }
     }
 
     //! \return a temp folder suitable to work in for downloads and preparation
