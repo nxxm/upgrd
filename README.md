@@ -14,7 +14,8 @@ This is the upgrd library, with the ecosystem that **nxxm** is providing the goa
     "nxxm",
     "example-upgrd-app",
     "v0.0.1",
-    argv[0],
+    argc,
+    argv,
     std::cout
   };
 
@@ -23,3 +24,7 @@ This is the upgrd library, with the ecosystem that **nxxm** is providing the goa
 
 ```
 
+This will add the following command line switches to your app : 
+  * `--dont-upgrade` : never perform the up-to-date check
+  * `--force-upgrade` : force program upgrade (always check)
+  * `--auto-upgrade` : check normally (once a day) but always do the upgrade without asking user.

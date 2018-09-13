@@ -69,12 +69,11 @@ namespace upgrd {
      * \param semver application version as described in https://semver.org/ 
      */
     manager(const std::string& github_owner, const std::string& github_repo,
-        const std::string& semver, fs::path app_path, 
+        const std::string& semver, int argc, const char* const argv[], 
         std::ostream& log)
       :   github_owner_(github_owner)
         , github_repo_(github_repo)
         , current(semver)
-        , _app_path(app_path)
         , _log(log)
     {
       fs::create_directories(temp_dir());
@@ -84,8 +83,23 @@ namespace upgrd {
 
       if (!ec) {
         _app_path = found_full_program;
+      } else {
+        _app_path = argv[0];
       }
+
+      std::vector<std::string> all(argv, argv + argc);
+
+      dont_upgrade = 
+        (std::find(all.begin(), all.end(), "--dont-upgrade") != all.end());
+
+      force_upgrade = 
+        (std::find(all.begin(), all.end(), "--force-upgrade") != all.end());
+
+      auto_upgrade = 
+        (std::find(all.begin(), all.end(), "--auto-upgrade") != all.end());
     }
+
+ 
 
     //! \return a temp folder suitable to work in for downloads and preparation
     fs::path temp_dir() {
@@ -111,7 +125,6 @@ namespace upgrd {
       using namespace std::literals::chrono_literals;
       using namespace boost::algorithm;
       try {
-        //TODO: write last time tried and check every day once
 
         std::error_condition dont_throw;
         auto previous_check_str = pre::file::to_string(previous_check_file().generic_string(), dont_throw);
@@ -119,7 +132,7 @@ namespace upgrd {
         if (!previous_check_str.empty()) { previous_check = std::chrono::seconds(std::stol(previous_check_str)); }
         auto yesterday  = (std::chrono::system_clock::now() - 24h).time_since_epoch();
 
-        if (previous_check < yesterday) {
+        if ( force_upgrade || ( (!dont_upgrade) && (previous_check < yesterday)) ) {
 
           gh::get_latest_release(github_owner_, github_repo_, [&](gh::releases::release_t&& latest) {
             
@@ -147,7 +160,7 @@ namespace upgrd {
               });
 
               if (compatible_asset != latest.assets.end()) {
-                _log << "🆕 " << github_owner_ << "/" << github_repo_ << " version available.\n"
+                _log << "🆕 " << _app_path.stem().generic_string() << " version available on " << github_owner_ << "/" << github_repo_ << ".\n"
                   << "current version : " << std::string(current) << "\n"
                   << "new version : " << std::string(remote) << "\n\n"
                   
@@ -156,7 +169,7 @@ namespace upgrd {
                   << latest.body 
                   << std::endl;
 
-                char upgrade = 'o';
+                char upgrade = (auto_upgrade) ? 'y' : '!';
                 _log << "Do you want to perform the upgrade ?." << std::endl;
                 while ( (std::tolower(upgrade) != 'y') && (std::tolower(upgrade) != 'n') ) {
                   _log << "[y]es or [n]o ? Either type y or n + Return : " << std::endl;
@@ -218,11 +231,11 @@ namespace upgrd {
                     // and continue to run into current app
                   }
                 } else {
-                  std::cout << "You will be reminded in 24h for the update again. Or pass --force-update if you want it earlier" << std::endl;
+                  std::cout << "You will be reminded in 24h for the update again. Or pass --force-upgrade if you want it earlier" << std::endl;
                 }
               }
             } else {
-              _log << "👍 You have the latest version : " 
+              _log << "👍 " << _app_path.stem().generic_string() << " from " << github_owner_ << "/" << github_repo_ << " is up-to-date : " 
                << "local : " << std::string(current) << ", "
                << "remote : " << std::string(remote) << std::endl;
             
@@ -241,6 +254,9 @@ namespace upgrd {
     version_t current;
     fs::path _app_path;
     std::ostream& _log;
+    bool force_upgrade = false;
+    bool dont_upgrade = false;
+    bool auto_upgrade = false;
 
   };
 
