@@ -13,4 +13,4 @@ jobs:
       - name: nxxm builds project 
         run: |
           export HOME=/root
-          nxxm . --dont-upgrade --verbose --test all 
+          nxxm . --verbose --test all 
