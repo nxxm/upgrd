@@ -3,6 +3,8 @@
 #include <fstream>
 #include <boost/filesystem.hpp>
 #include <boost/exception/diagnostic_information.hpp> 
+#include <boost/interprocess/sync/file_lock.hpp>
+#include <boost/interprocess/sync/scoped_lock.hpp>
 #include <cli_widgets/spin_loader.hpp>
 #include <xxhr/xxhr.hpp>
 
@@ -143,6 +145,8 @@ namespace shipxx {
     using namespace xxhr;
 
     cli_widgets::spin_loader loader{std::cout};
+        fs::path path_of_file_for_lock = download_dir / (cache_name + ".zip"s);
+
 
     try { 
 
@@ -155,6 +159,8 @@ namespace shipxx {
         loader.launch();
        
         download(url, downloaded_zip, expected_sha1, check_sha1, auth);
+        boost::interprocess::file_lock f_lock((path_of_file_for_lock.string()).c_str());
+        boost::interprocess::scoped_lock<boost::interprocess::file_lock> e_lock(f_lock);
 
         fs::remove_all(download_dir / cache_name);
         detail::extract(downloaded_zip, download_dir / cache_name);
