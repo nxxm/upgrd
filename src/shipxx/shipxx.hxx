@@ -103,6 +103,13 @@ namespace shipxx {
               << std::endl; 
             --retries_count;
             download();
+          } else if ((hash != expected_sha1) && (retries_count <= 0)) {
+            std::stringstream ss;
+            ss << "[" << url << "]: Download error ( i.e. "
+                         << "expected hash : " << expected_sha1 << ", received : " << hash << " ), retrying "
+                         << retries_count << " times." << std::endl;
+            throw std::runtime_error(ss.str());
+
           } else {
             store_download(resp);
           }
@@ -115,7 +122,9 @@ namespace shipxx {
       }
     };
 
-    if (!is_downloaded_cache_valid()) download();
+    if (!is_downloaded_cache_valid()) {
+      download();
+    }
   }
 
   /**
