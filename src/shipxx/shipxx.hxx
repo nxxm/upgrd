@@ -9,7 +9,8 @@
 #include <shipxx/done.hpp>
 #include <shipxx/sha1.hpp>
 #include <zip.h>
-
+#include <cstring>
+#include <cerrno>
 
 namespace shipxx {
   namespace fs = boost::filesystem;
@@ -17,17 +18,24 @@ namespace shipxx {
 
   namespace detail {
     inline void extract(fs::path file, fs::path out) {
-      auto on_extract_entry = [](const char *filename, void*) {
-        //std::cout << "extracted " << filename << std::endl;
+      auto on_extract_entry = [](const char *filename, void *) {
+        log::debug() << "extracted " << filename << std::endl;
         return 0;
       };
 
-      //TODO: handle error case (no more space ...)
-      zip_extract(
-        file.generic_string().data(),
-        out.generic_string().data(),
-        on_extract_entry,
-        nullptr);
+      // TODO: handle error case (no more space ...)
+      int extraction_result = 0;
+      extraction_result =
+          zip_extract(file.generic_string().data(), out.generic_string().data(), on_extract_entry, nullptr);
+      if (extraction_result < 0) {
+        log::error() << "An error while extracting the files occurred : " << std::strerror(errno);
+
+        switch (errno) {
+        case EACCES:
+        log::error() << "Probably that nxxm cannot write to the root of the disk. \n You can choose where nxxm writes by changing this environment variable: $env:NXXM_HOME_DIR " ;
+          break;
+        }
+      }
     }
   }
 
