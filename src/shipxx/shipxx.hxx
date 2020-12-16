@@ -17,6 +17,33 @@ namespace shipxx {
   namespace fs = boost::filesystem;
   using namespace std::string_literals;
 
+  interprocess_lock(fs::path filename) {
+       if (is_directory(filename))
+       {
+        std::string name_file = "."+(filename.stem()).string()+".lock";
+        filename_ = filename / name_file ;
+       } else 
+       {
+         filename_ = filename ;
+       }
+
+      fs::create_directories(filename_.parent_path());
+
+      if (!fs::exists(filename_)) {
+        std::ofstream file_to_lock((filename_.string()).c_str(), std::ios::trunc);
+        file_to_lock.exceptions(std::ios::badbit);
+      }
+
+      boost::interprocess::file_lock file_lock_((filename_.string()).c_str());
+      boost::interprocess::scoped_lock<boost::interprocess::file_lock> e_lock_(file_lock_);
+    }
+
+  private:
+    fs::path filename_;
+    std::optional<boost::interprocess::file_lock> file_lock_;
+    std::optional<boost::interprocess::scoped_lock<boost::interprocess::file_lock>> e_lock_;
+  };
+
   namespace detail {
     inline void extract(fs::path file, fs::path out) {
       auto on_extract_entry = [](const char *filename, void*) {
@@ -157,6 +184,8 @@ namespace shipxx {
         }
 
         loader.launch();
+        shipxx::interprocess_lock lock{final_dest} ;
+   
        
         download(url, downloaded_zip, expected_sha1, check_sha1, auth);
         boost::interprocess::file_lock f_lock((path_of_file_for_lock.string()).c_str());
