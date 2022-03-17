@@ -6,11 +6,11 @@ jobs:
   build: 
     name: build-wasm
     runs-on: ubuntu-latest
-    container: nxxm/nxxm-ubuntu
+    container: tipibuild/tipi-ubuntu
     steps:
       - name: checkout
         uses: actions/checkout@v2
-      - name: nxxm builds project 
+      - name: tipi builds project 
         run: |
           export HOME=/root
-          nxxm . --verbose --test all 
+          tipi . --verbose --test all 
