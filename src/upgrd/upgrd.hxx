@@ -206,17 +206,17 @@ namespace upgrd {
                       !expected_sha1.empty()
                     ); 
                     
-                    auto system_shell = bp::shell();
+                    
 
                     _log << "We will close, the next time you will come back you will be in the newer version" << std::endl;
   
                     #if BOOST_OS_WINDOWS
-                    auto str_cmd = "timeout /t 3 /nobreak & del /F /Q "s + _app_path.make_preferred().string() + " & "
-                      + "move /Y " + upgraded_app.make_preferred().string() + " " + _app_path.make_preferred().string();
-
-                    bp::spawn(system_shell, "/c", str_cmd.data());
-
+                     auto system_shell = bp::search_path("powershell.exe");
+                    std::string str_cmd = "Start-Process cmd -ArgumentList \'"s+"timeout /t 3 /nobreak & del /F /Q "s + _app_path.make_preferred().string() + " & "
+                      + "move /Y " + upgraded_app.make_preferred().string() + " " + _app_path.make_preferred().string(); +"\' -Verb RunAs"s;
+                    bp::spawn(system_shell,"-Command",str_cmd.data());
                     #else 
+                    auto system_shell = bp::shell();
                     auto str_cmd = "sleep 3; rm "s + _app_path.generic_string() + ";"
                       + "mv " + upgraded_app.generic_string() + " " + _app_path.generic_string() + ";";
 

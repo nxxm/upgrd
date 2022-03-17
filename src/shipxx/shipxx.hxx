@@ -19,7 +19,7 @@ namespace shipxx {
   namespace detail {
     inline void extract(fs::path file, fs::path out) {
       auto on_extract_entry = [](const char *filename, void *) {
-        log::debug() << "extracted " << filename << std::endl;
+        std::cout << "extracted " << filename << std::endl;
         return 0;
       };
 
@@ -28,11 +28,11 @@ namespace shipxx {
       extraction_result =
           zip_extract(file.generic_string().data(), out.generic_string().data(), on_extract_entry, nullptr);
       if (extraction_result < 0) {
-        log::error() << "An error while extracting the files occurred : " << std::strerror(errno);
+         std::cout <<  "An error while extracting the files occurred : " << std::strerror(errno);
 
         switch (errno) {
         case EACCES:
-        log::error() << "Probably that nxxm cannot write to the root of the disk. \n You can choose where nxxm writes by changing this environment variable: $env:NXXM_HOME_DIR " ;
+         std::cout <<  "Probably that tipi cannot write to the root of the disk. \n You can choose where tipi writes by changing this environment variable: $env:TIPI_HOME_DIR " ;
           break;
         }
       }
@@ -137,7 +137,7 @@ namespace shipxx {
 
   /**
    * \brief Check if not in cache, downloads in cache, unpacks and installs with install marker for faster reop given zip archive.
-   * \param cache_name Which name to use in downlaod cache within current nxxm distro
+   * \param cache_name Which name to use in downlaod cache within current tipi distro
    * \param url which source url
    * \param expected_sha1 which expected content hash
    * \param final_dest which destination for the unpacked data
