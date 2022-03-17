@@ -13,4 +13,4 @@ jobs:
       - name: tipi builds project 
         run: |
           export HOME=/root
-          tipi . -t linux-cxx17 --verbose --test all 
+          tipi . -t linux-cxx17 --dont-upgrade --verbose --test all 
