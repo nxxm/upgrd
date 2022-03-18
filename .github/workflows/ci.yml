@@ -4,7 +4,7 @@ on: [push]
 
 jobs:
   build: 
-    name: build-wasm
+    name: build-linux
     runs-on: ubuntu-latest
     container: tipibuild/tipi-ubuntu
     steps:
@@ -13,4 +13,4 @@ jobs:
       - name: tipi builds project 
         run: |
           export HOME=/root
-          tipi . --verbose --test all 
+          tipi . -t linux-cxx17 --verbose
