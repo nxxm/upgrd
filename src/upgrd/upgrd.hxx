@@ -211,6 +211,7 @@ namespace upgrd {
                     _log << "We will close, the next time you will come back you will be in the newer version" << std::endl;
   
                     #if BOOST_OS_WINDOWS
+                    _log <<"Tipi may need administrative privileges to apply the update."<< std::endl;
                     auto system_shell = bp::search_path("powershell.exe");
                     auto str_cmd = "Start-Process cmd -ArgumentList \'timeout /t 3 /nobreak & del /F /Q "s + _app_path.make_preferred().string() + " & "
                       + "move /Y " + upgraded_app.make_preferred().string() + " "s + _app_path.make_preferred().string(); +"\' -Verb RunAs";
