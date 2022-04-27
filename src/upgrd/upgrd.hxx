@@ -214,7 +214,7 @@ namespace upgrd {
                     _log <<"Tipi may need administrative privileges to apply the update."<< std::endl;
                     auto system_shell = bp::search_path("powershell.exe");
                     auto str_cmd = "Start-Process cmd -ArgumentList \'timeout /t 3 /nobreak & del /F /Q "s + _app_path.make_preferred().string() + " & "
-                      + "move /Y " + upgraded_app.make_preferred().string() + " "s + _app_path.make_preferred().string(); +"\' -Verb RunAs";
+                                    + "move /Y " + upgraded_app.make_preferred().string() + " "s + _app_path.make_preferred().string() +"\' -Verb RunAs";
                     bp::spawn(system_shell,"-Command",str_cmd.data());
                     #else 
                     auto system_shell = bp::shell();
