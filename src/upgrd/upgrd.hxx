@@ -217,8 +217,7 @@ namespace upgrd {
                     bp::spawn(system_shell, "/c", str_cmd.data());
 
                     #else 
-                    auto str_cmd = "sleep 3; rm "s + _app_path.generic_string() + ";"
-                      + "mv " + upgraded_app.generic_string() + " " + _app_path.generic_string() + ";";
+                    auto str_cmd = "sleep 3; " + "cp " + upgraded_app.generic_string() + " " + _app_path.generic_string() + ";";
 
                     bp::spawn(system_shell, "-c", str_cmd.data());
 
