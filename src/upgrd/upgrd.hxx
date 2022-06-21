@@ -213,11 +213,9 @@ namespace upgrd {
                     auto current_pid =  boost::this_process::get_id();
   
                     #if BOOST_OS_WINDOWS
-                    auto str_cmd = "timeout /t 3 /nobreak & del /F /Q "s + _app_path.make_preferred().string() + " & "
-                      + "move /Y " + upgraded_app.make_preferred().string() + " " + _app_path.make_preferred().string();
+                    auto str_cmd = "robocopy /W:1 /R:20 /NS /NC /NDL /NP /NJH /NJS " + upgraded_app.parent_path().make_preferred().string() + " " + _app_path.parent_path().make_preferred().string() + " " + upgraded_app.filename().make_preferred().string() + " & echo Update applied successfully!";
 
                     bp::spawn(system_shell, "/c", str_cmd.data());
-
                     #else 
 
                     /*
