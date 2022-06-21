@@ -208,7 +208,9 @@ namespace upgrd {
                     
                     auto system_shell = bp::shell();
 
-                    _log << "We will close, the next time you will come back you will be in the newer version" << std::endl;
+                    _log << "▶ This process will now terminate and the update will be applied. Please re-run your command then" << std::endl;
+
+                    auto current_pid =  boost::this_process::get_id();
   
                     #if BOOST_OS_WINDOWS
                     auto str_cmd = "timeout /t 3 /nobreak & del /F /Q "s + _app_path.make_preferred().string() + " & "
@@ -217,7 +219,29 @@ namespace upgrd {
                     bp::spawn(system_shell, "/c", str_cmd.data());
 
                     #else 
-                    auto str_cmd = "sleep 3; cp " + upgraded_app.generic_string() + " " + _app_path.generic_string() + ";";
+
+                    /*
+                      NOTE: "unnessary" spaces and semicolons in the str_cmd below are probably there for a good reason
+                      as we run the whole command as a single bash -c .... which makes them crucial. Spread on multiple lines
+                      purely for readability reasons here...
+                    */                    
+                    auto str_cmd = "MAX_RETRIES=20; "
+                      "i=0; "
+                      "false; "
+                      "while [ $? -ne 0 -a $i -lt $MAX_RETRIES ]; do "
+                        "i=$(($i+1)); "
+                        "cp " + upgraded_app.generic_string() + " " + _app_path.generic_string() + ";"
+                        "if [ $? -ne 0 -a $i -lt $MAX_RETRIES ]; then "s
+                          "printf \"\\e[91mx Failed to copy " + upgraded_app.generic_string() + " to " + _app_path.generic_string() + "\\n-> retrying in 1s [$i of $MAX_RETRIES]\\e[0m\\n\"; "
+                          "sleep 1; "
+                          "false; "
+                        "fi; "
+                      "done; "                       
+                      "if [ $i -eq $MAX_RETRIES ]; then " 
+                        "printf \"\\e[91mCould not copy update to / in $MAX_RETRIES retries, ending.\\e[0m\\n\"; "
+                        "exit 1; "
+                      "fi; "
+                      "printf \"\\e[1;32mUpdate applied successfully! \\e[0m\\n\";";
 
                     bp::spawn(system_shell, "-c", str_cmd.data());
 
