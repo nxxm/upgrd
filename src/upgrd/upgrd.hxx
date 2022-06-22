@@ -219,9 +219,9 @@ namespace upgrd {
                     #else 
 
                     auto str_cmd = "chown $(/usr/bin/id -run) " + upgraded_app.generic_string()
-                      " && chmod a+x,u+w " + upgraded_app.generic_string() 
-                      " && mv -f " + upgraded_app.generic_string() + " " + _app_path.generic_string() ";"
-                      "if [ $? -eq 0 ]; then printf \"\\e[1;32mUpdate applied successfully! \\e[0m\\n\"; else printf \"\\e[91mUpgrade failed.\\e[0m\\n\"; fi;";
+                     +  " && chmod a+x,u+w " + upgraded_app.generic_string()
+                     + " && mv -f " + upgraded_app.generic_string() + " " + _app_path.generic_string() + ";"
+                     + "if [ $? -eq 0 ]; then printf \"\\e[1;32mUpdate applied successfully! \\e[0m\\n\"; else printf \"\\e[91mUpgrade failed.\\e[0m\\n\"; fi;";
 
                     bp::spawn(system_shell, "-c", str_cmd.data());
 
