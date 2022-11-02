@@ -208,17 +208,20 @@ namespace upgrd {
                     
                     auto system_shell = bp::shell();
 
-                    _log << "We will close, the next time you will come back you will be in the newer version" << std::endl;
+                    _log << "▶ This process will now terminate and the update will be applied. Please re-run your command then" << std::endl;
+
+                    auto current_pid =  boost::this_process::get_id();
   
                     #if BOOST_OS_WINDOWS
-                    auto str_cmd = "timeout /t 3 /nobreak & del /F /Q "s + _app_path.make_preferred().string() + " & "
-                      + "move /Y " + upgraded_app.make_preferred().string() + " " + _app_path.make_preferred().string();
+                    auto str_cmd = "robocopy /W:1 /R:20 /NS /NC /NDL /NP /NJH /NJS " + upgraded_app.parent_path().make_preferred().string() + " " + _app_path.parent_path().make_preferred().string() + " " + upgraded_app.filename().make_preferred().string() + " & echo Update applied successfully!";
 
                     bp::spawn(system_shell, "/c", str_cmd.data());
-
                     #else 
-                    auto str_cmd = "sleep 3; rm "s + _app_path.generic_string() + ";"
-                      + "mv " + upgraded_app.generic_string() + " " + _app_path.generic_string() + ";";
+
+                    auto str_cmd = "chown $(/usr/bin/id -run) " + upgraded_app.generic_string()
+                     +  " && chmod a+x,u+w " + upgraded_app.generic_string()
+                     + " && mv -f " + upgraded_app.generic_string() + " " + _app_path.generic_string() + ";"
+                     + "if [ $? -eq 0 ]; then printf \"\\e[1;32mUpdate applied successfully! \\e[0m\\n\"; else printf \"\\e[91mUpgrade failed.\\e[0m\\n\"; fi;";
 
                     bp::spawn(system_shell, "-c", str_cmd.data());
 

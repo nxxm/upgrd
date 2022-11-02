@@ -1,0 +1,14 @@
+{
+  "tipi-build/zip" : { "@" : "feature/set_time_write_utc" } 
+
+  , "nxxm/gh" : { "@" : "feature/add-get-release-by-tag",
+    "requires" : {
+       "nxxm/xxhr" : { "@" : "feature/cpr-backend" }
+       , "cpp-pre/json" : { "@" : "feature/fix-struct-names-windows"  }
+       , "cpp-pre/type_traits" : {   }
+    }
+  } 
+  , "cpp-pre/file" : {}
+  , "nxxm/cli_widgets" : { "@" : "feature/remove-boostorg-predef"}
+  , "platform" : [ "Boost::system", "Boost::filesystem" ]
+}
