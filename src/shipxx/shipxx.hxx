@@ -19,7 +19,7 @@ namespace shipxx {
   namespace detail {
     inline void extract(fs::path file, fs::path out) {
       auto on_extract_entry = [](const char *filename, void *) {
-        log::debug() << "extracted " << filename << std::endl;
+        std::cout << "extracted " << filename << std::endl;
         return 0;
       };
 
@@ -28,11 +28,11 @@ namespace shipxx {
       extraction_result =
           zip_extract(file.generic_string().data(), out.generic_string().data(), on_extract_entry, nullptr);
       if (extraction_result < 0) {
-        log::error() << "An error while extracting the files occurred : " << std::strerror(errno);
+        std::cout << "An error while extracting the files occurred : " << std::strerror(errno);
 
         switch (errno) {
         case EACCES:
-        log::error() << "Probably that nxxm cannot write to the root of the disk. \n You can choose where nxxm writes by changing this environment variable: $env:NXXM_HOME_DIR " ;
+        std::cout << "Probably that nxxm cannot write to the root of the disk. \n You can choose where nxxm writes by changing this environment variable: $env:NXXM_HOME_DIR " ;
           break;
         }
       }
