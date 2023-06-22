@@ -1,14 +1,14 @@
 {
   "tipi-build/zip" : { "@" : "feature/set_time_write_utc" } 
-
-  , "nxxm/gh" : { "@" : "feature/add-get-release-by-tag",
-    "requires" : {
-       "nxxm/xxhr" : { "@" : "feature/cpr-backend" }
-       , "cpp-pre/json" : { "@" : "feature/fix-struct-names-windows"  }
-       , "cpp-pre/type_traits" : {   }
-    }
-  } 
-  , "cpp-pre/file" : {}
-  , "nxxm/cli_widgets" : { "@" : "feature/remove-boostorg-predef"}
-  , "platform" : [ "Boost::system", "Boost::filesystem" ]
+  , "nxxm/gh" : { "@" : "feature/move-to-native-tipi-deps" } 
+  , "cpp-pre/file" : { "@" : "feature/move-to-native-tipi-deps" }
+  , "nxxm/cli_widgets" : { "@" : "feature/move-to-native-tipi-deps"}
+  , "tipi-deps/boost" : {
+      "id" : {"host_name":"github.com","org_name":"lambourl","repo_name":"boost"}
+    , "@" : "v1.80.0-without-submodules"
+    , "u" : true
+    , "opts" : "set(BOOST_INCLUDE_LIBRARIES system filesystem)"
+    , "packages" : ["boost_system", "boost_filesystem"]
+    , "targets" : ["Boost::system", "Boost::filesystem"]
+  }
 }
